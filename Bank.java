@@ -3,7 +3,9 @@ import java.util.ArrayList;
 public class Bank implements Transaction {
 
     private ArrayList<Account> accounts = new ArrayList<>();
-    private ArrayList<TransactionRecord> records = new ArrayList<>();
+    private TransactionRepository transactionRepository = new TransactionRepository();
+    private TransactionHistoryService historyService =
+            new TransactionHistoryService(transactionRepository, new TransactionFilter());
 
     public void addAccount(Account account) {
         accounts.add(account);
@@ -31,33 +33,68 @@ public class Bank implements Transaction {
 
     @Override
     public void deposit(Account account, double amount) {
-        if (account != null) {
-            account.deposit(amount);
-            records.add(new TransactionRecord("Deposit", account.getAccountNumber(), amount));
-        } else {
+        if (account == null) {
             System.out.println("Account not found.");
+            return;
+        }
+
+        if (amount <= 0) {
+            System.out.println("Amount must be greater than zero.");
+            return;
+        }
+
+        double before = account.getBalance();
+        account.deposit(amount);
+
+        if (account.getBalance() > before) {
+            historyService.logDeposit(account.getAccountNumber(), amount);
         }
     }
 
     @Override
     public void withdraw(Account account, double amount) {
-        if (account != null) {
-            account.withdraw(amount);
-            records.add(new TransactionRecord("Withdraw", account.getAccountNumber(), amount));
-        } else {
+        if (account == null) {
             System.out.println("Account not found.");
+            return;
+        }
+
+        if (amount <= 0) {
+            System.out.println("Amount must be greater than zero.");
+            return;
+        }
+
+        double before = account.getBalance();
+        account.withdraw(amount);
+
+        if (account.getBalance() < before) {
+            historyService.logWithdraw(account.getAccountNumber(), amount);
         }
     }
 
     @Override
     public void transfer(Account fromAccount, Account toAccount, double amount) {
-        if (fromAccount != null && toAccount != null) {
-            fromAccount.withdraw(amount);
-            toAccount.deposit(amount);
-            records.add(new TransactionRecord("Transfer", fromAccount.getAccountNumber(), amount));
-            System.out.println("Transfer successful.");
-        } else {
+        if (fromAccount == null || toAccount == null) {
             System.out.println("Invalid account number.");
+            return;
+        }
+
+        if (fromAccount.getAccountNumber().equals(toAccount.getAccountNumber())) {
+            System.out.println("Cannot transfer to the same account.");
+            return;
+        }
+
+        if (amount <= 0) {
+            System.out.println("Amount must be greater than zero.");
+            return;
+        }
+
+        double fromBefore = fromAccount.getBalance();
+        fromAccount.withdraw(amount);
+
+        if (fromAccount.getBalance() < fromBefore) {
+            toAccount.deposit(amount);
+            historyService.logTransfer(fromAccount.getAccountNumber(), toAccount.getAccountNumber(), amount);
+            System.out.println("Transfer successful.");
         }
     }
 
@@ -67,5 +104,9 @@ public class Bank implements Transaction {
                     " | Holder: " + acc.getAccountHolder() +
                     " | Balance: " + acc.getBalance());
         }
+    }
+
+    public TransactionHistoryService getTransactionHistoryService() {
+        return historyService;
     }
 }
