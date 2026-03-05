@@ -7,9 +7,20 @@ public class Bank implements Transaction {
     private TransactionHistoryService historyService =
             new TransactionHistoryService(transactionRepository, new TransactionFilter());
 
-    public void addAccount(Account account) {
+    public boolean addAccount(Account account) {
+        if (account == null) {
+            System.out.println("Invalid account details.");
+            return false;
+        }
+
+        if (findAccount(account.getAccountNumber()) != null) {
+            System.out.println("Account number already exists.");
+            return false;
+        }
+
         accounts.add(account);
         System.out.println("Account created successfully.");
+        return true;
     }
 
     public Account findAccount(String accNumber) {
