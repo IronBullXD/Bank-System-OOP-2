@@ -4,14 +4,23 @@ public class Menu {
 
     private Bank bank;
     private Scanner scanner = new Scanner(System.in);
+    private AccountAuthentication auth = new AccountAuthentication();
+
+    //Default pass ni siya and user for the "Assume database"
+    private User currentUser = new User("admin", "password123");
 
     public Menu(Bank bank) {
         this.bank = bank;
     }
 
     public void start() {
-        int choice;
+        
+        if (!loginPrompt()) {
+            System.out.println("Authentication failed. Exiting system...");
+            return; 
+        }
 
+        int choice;
         do {
             System.out.println("\n===== BANKING SYSTEM =====");
             System.out.println("1. Create Savings Account");
@@ -23,7 +32,7 @@ public class Menu {
             System.out.println("7. Exit");
             System.out.print("Choose option: ");
             choice = scanner.nextInt();
-            scanner.nextLine();
+            scanner.nextLine(); 
 
             switch (choice) {
                 case 1:
@@ -45,13 +54,31 @@ public class Menu {
                     bank.showAllAccounts();
                     break;
                 case 7:
-                    System.out.println("Thank you!");
+                    System.out.println("Logging out... Thank you!");
                     break;
                 default:
                     System.out.println("Invalid choice.");
             }
 
         } while (choice != 7);
+    }
+
+    private boolean loginPrompt() {
+        System.out.println("\n===== SYSTEM LOGIN =====");
+        System.out.print("Username: ");
+        String inputUsername = scanner.nextLine();
+        
+        System.out.print("Password: ");
+        String inputPassword = scanner.nextLine();
+
+        //AccountAuthentication  to verify 
+        if (auth.login(currentUser, inputUsername, inputPassword)) {
+            System.out.println("Login successful! Welcome, " + currentUser.getUsername() + ".");
+            return true;
+        } else {
+            System.out.println("Invalid username or password.");
+            return false;
+        }
     }
 
     private void createSavings() {
@@ -61,7 +88,7 @@ public class Menu {
         String holder = scanner.nextLine();
         System.out.print("Initial Balance: ");
         double balance = scanner.nextDouble();
-
+        scanner.nextLine(); 
         bank.addAccount(new SavingsAccount(accNo, holder, balance));
     }
 
@@ -72,7 +99,7 @@ public class Menu {
         String holder = scanner.nextLine();
         System.out.print("Initial Balance: ");
         double balance = scanner.nextDouble();
-        scanner.nextLine();
+        scanner.nextLine(); 
 
         bank.addAccount(new CurrentAccount(accNo, holder, balance));
     }
@@ -82,6 +109,7 @@ public class Menu {
         String accNo = scanner.nextLine();
         System.out.print("Amount: ");
         double amount = scanner.nextDouble();
+        scanner.nextLine(); 
         bank.deposit(accNo, amount);
     }
 
