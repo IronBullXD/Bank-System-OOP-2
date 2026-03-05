@@ -1,3 +1,5 @@
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
 public class Menu {
@@ -5,12 +7,14 @@ public class Menu {
     private Bank bank;
     private Scanner scanner = new Scanner(System.in);
     private AccountAuthentication auth = new AccountAuthentication();
+    private TransactionHistoryService historyService;
 
     //Default pass ni siya and user for the "Assume database"
     private User currentUser = new User("admin", "password123");
 
     public Menu(Bank bank) {
         this.bank = bank;
+        this.historyService = bank.getTransactionHistoryService();
     }
 
     public void start() {
@@ -30,7 +34,8 @@ public class Menu {
             System.out.println("5. Transfer");
             System.out.println("6. View Accounts");
             System.out.println("7. Generate Bank Statement");
-            System.out.println("8. Exit");
+            System.out.println("8. Transaction History");
+            System.out.println("9. Exit");
             System.out.print("Choose option: ");
             choice = scanner.nextInt();
             scanner.nextLine(); 
@@ -58,13 +63,16 @@ public class Menu {
                     generateStatement();
                     break;
                 case 8:
+                    transactionHistoryMenu();
+                    break;
+                case 9:
                     System.out.println("Logging out... Thank you!");
                     break;
                 default:
                     System.out.println("Invalid choice.");
             }
 
-        } while (choice != 8);
+        } while (choice != 9);
     }
 
     private boolean loginPrompt() {
@@ -157,5 +165,102 @@ public class Menu {
         } else {
             System.out.println("Invalid account number.");
         }
+    }
+
+    private void transactionHistoryMenu() {
+        int choice;
+        do {
+            System.out.println("\n===== TRANSACTION HISTORY =====");
+            System.out.println("1. View All Transactions");
+            System.out.println("2. View By Account Number");
+            System.out.println("3. Filter Transactions");
+            System.out.println("4. Back");
+            System.out.print("Choose option: ");
+            choice = scanner.nextInt();
+            scanner.nextLine();
+
+            switch (choice) {
+                case 1:
+                    historyService.showAllTransactions();
+                    break;
+                case 2:
+                    viewByAccountNumber();
+                    break;
+                case 3:
+                    filterTransactionsMenu();
+                    break;
+                case 4:
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        } while (choice != 4);
+    }
+
+    private void viewByAccountNumber() {
+        System.out.print("Account Number: ");
+        String accNo = scanner.nextLine();
+        historyService.showTransactionsByAccount(accNo);
+    }
+
+    private void filterTransactionsMenu() {
+        int choice;
+        do {
+            System.out.println("\n===== FILTER TRANSACTIONS =====");
+            System.out.println("1. By Type");
+            System.out.println("2. By Date Range");
+            System.out.println("3. By Minimum Amount");
+            System.out.println("4. Back");
+            System.out.print("Choose option: ");
+            choice = scanner.nextInt();
+            scanner.nextLine();
+
+            switch (choice) {
+                case 1:
+                    filterByType();
+                    break;
+                case 2:
+                    filterByDateRange();
+                    break;
+                case 3:
+                    filterByMinimumAmount();
+                    break;
+                case 4:
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        } while (choice != 4);
+    }
+
+    private void filterByType() {
+        System.out.print("Enter type (Deposit/Withdraw/Transfer): ");
+        String type = scanner.nextLine();
+        historyService.showTransactionsByType(type);
+    }
+
+    private void filterByDateRange() {
+        try {
+            System.out.print("From date (YYYY-MM-DD): ");
+            LocalDate from = LocalDate.parse(scanner.nextLine());
+            System.out.print("To date (YYYY-MM-DD): ");
+            LocalDate to = LocalDate.parse(scanner.nextLine());
+
+            if (to.isBefore(from)) {
+                System.out.println("Invalid date range.");
+                return;
+            }
+
+            historyService.showTransactionsByDateRange(from, to);
+        } catch (DateTimeParseException e) {
+            System.out.println("Invalid date format. Use YYYY-MM-DD.");
+        }
+    }
+
+    private void filterByMinimumAmount() {
+        System.out.print("Minimum amount: ");
+        double minAmount = scanner.nextDouble();
+        scanner.nextLine();
+        historyService.showTransactionsByMinAmount(minAmount);
     }
 }
