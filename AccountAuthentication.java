@@ -1,4 +1,4 @@
-public class Authentication {
+public class AccountAuthentication {
 
     public boolean login(User user, String username, String password) {
 
